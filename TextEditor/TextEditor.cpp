@@ -37,7 +37,7 @@ void TextEditor::run() {
                 }
                 else if (cursor.getRow() > 0) {  
                     size_t i = buffer.getLineLength(cursor.getRow() - 1); 
-                    buffer.deleteEnterLine(cursor.getRow());
+                    buffer.deleteLine(cursor.getRow());
                     cursor.moveUp();
                     cursor.setCol(i);  
                 }
@@ -45,9 +45,18 @@ void TextEditor::run() {
                 break;
             case 0:
             case 224: {
-                int arrow = _getch();
+                int key = _getch();
 
-                switch (arrow) {
+                switch (key) {
+                    case 83:
+                        if (cursor.getCol() <= buffer.getLineLength(cursor.getRow()) - 1) {
+                            buffer.deleteChar({cursor.getRow(), cursor.getCol()});
+                        }
+                        else if (cursor.getCol() >= buffer.getLineLength(cursor.getRow()) && cursor.getRow() < buffer.getText().size() - 1) {
+                            buffer.deleteLine(cursor.getRow() + 1);
+                        }
+                        break;
+
                     case 72:
                         cursor.moveUp();
                         if (cursor.getCol() > buffer.getLineLength(cursor.getRow())) {

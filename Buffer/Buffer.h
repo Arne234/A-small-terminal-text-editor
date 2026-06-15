@@ -27,5 +27,5 @@ class Buffer {
 
         const size_t getLineLength(const size_t index) const;
         void newLine(Position pos);
-        void deleteEnterLine(const size_t index);
+        void deleteLine(const size_t index);
 };

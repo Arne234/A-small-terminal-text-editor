@@ -75,7 +75,7 @@ void Buffer::newLine(Position pos) {
 }
 
 
-void Buffer::deleteEnterLine(const size_t index) {
+void Buffer::deleteLine(const size_t index) {
     const std::string deleteLine = lines[index];
     
     lines.erase(lines.begin() + index);
