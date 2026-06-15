@@ -18,7 +18,9 @@ class Cursor {
         size_t getCol();
         size_t getRow();
 
-        void setLineBreak();
+        void setRow(const size_t r);
         void setCol(const size_t c);
+
+        void setLineBreak();
 
 };

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <optional>
 
 
 struct Position {
@@ -28,4 +29,5 @@ class Buffer {
         const size_t getLineLength(const size_t index) const;
         void newLine(Position pos);
         void deleteLine(const size_t index);
+        std::optional<Position> findLine(const std::string& word, const Position start) const;
 };

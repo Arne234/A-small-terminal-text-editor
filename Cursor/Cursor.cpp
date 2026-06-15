@@ -39,12 +39,17 @@ size_t Cursor::getRow() {
 }
 
 
-void Cursor::setLineBreak() {
-    col = 0;
-    row++;
+void Cursor::setRow(const size_t r) {
+    row = r;
 }
 
 
 void Cursor::setCol(const size_t c) {
     col = c;
+}
+
+
+void Cursor::setLineBreak() {
+    col = 0;
+    row++;
 }

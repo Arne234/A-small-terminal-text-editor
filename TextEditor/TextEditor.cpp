@@ -1,6 +1,16 @@
 #include "TextEditor.h"
 
 
+enum class Mode {
+    normal,
+    searching
+};
+
+std::string search;
+std::optional<Position> lastMatch;
+Mode mode = Mode::normal;
+
+
 void TextEditor::run() {
     
     bool gameRunning = true;
@@ -17,12 +27,23 @@ void TextEditor::run() {
 
         switch(c) {
             case 27:
+                if (mode == Mode::searching) {
+                    mode = Mode::normal;
+                    search.clear();
+                    lastMatch.reset();
+                }
+
                 gameRunning = false;
                 break;
             case 19:
                 file.saveFiles();
                 break;
             case 32:
+                if (mode == Mode::searching) {
+                    search += ' ';
+                    break;
+                }
+                
                 buffer.insert({cursor.getRow(), cursor.getCol()}, ' ');
                 cursor.moveRight();
                 break;
@@ -31,10 +52,18 @@ void TextEditor::run() {
                 cursor.moveRight();
                 break;      
             case 8:
+                if (mode == Mode::searching) {
+                    if (!search.empty()) {
+                        search.pop_back();
+                    }
+                    break;
+                }
+
                 if (cursor.getCol() > 0) {
                     buffer.deleteChar({cursor.getRow(), cursor.getCol() - 1});
                     cursor.moveLeft();
                 }
+
                 else if (cursor.getRow() > 0) {  
                     size_t i = buffer.getLineLength(cursor.getRow() - 1); 
                     buffer.deleteLine(cursor.getRow());
@@ -43,20 +72,49 @@ void TextEditor::run() {
                 }
 
                 break;
+
+            case 6: {
+                search.clear();
+                mode = Mode::searching;
+                lastMatch.reset();
+
+                break;
+            }
+
+            case 'n':
+                if (mode == Mode::normal && !search.empty()) {
+                    Position start = lastMatch.value_or(Position{0, 0});
+                    
+                    auto pos = buffer.findLine(search, start);
+
+                    lastMatch = pos;
+
+                    if (pos.has_value()) {
+                        cursor.setRow(pos->row);
+                        cursor.setCol(pos->col);
+                    }
+                }
+                else {
+                    buffer.insert({cursor.getRow(), cursor.getCol()}, 'n');
+                    cursor.moveRight();
+                }
+                break;
+
             case 0:
             case 224: {
+                if (mode == Mode::searching) break;
+
                 int key = _getch();
 
                 switch (key) {
                     case 83:
-                        if (cursor.getCol() <= buffer.getLineLength(cursor.getRow()) - 1) {
+                        if (cursor.getCol() < buffer.getLineLength(cursor.getRow())) {
                             buffer.deleteChar({cursor.getRow(), cursor.getCol()});
                         }
                         else if (cursor.getCol() >= buffer.getLineLength(cursor.getRow()) && cursor.getRow() < buffer.getText().size() - 1) {
                             buffer.deleteLine(cursor.getRow() + 1);
                         }
                         break;
-
                     case 72:
                         cursor.moveUp();
                         if (cursor.getCol() > buffer.getLineLength(cursor.getRow())) {
@@ -84,10 +142,31 @@ void TextEditor::run() {
                 break;
             }
             case 13:
+                if (mode == Mode::searching) {
+                    Position start = lastMatch.value_or(Position{0, 0});
+                    
+                    auto pos = buffer.findLine(search, start);
+
+                    lastMatch = pos;
+
+                    if (pos.has_value()) {
+                        cursor.setRow(pos->row);
+                        cursor.setCol(pos->col);
+                    }
+
+                    mode = Mode::normal;
+                    break;
+                }
+
                 buffer.newLine({cursor.getRow(), cursor.getCol()});
                 cursor.setLineBreak();
                 break;
             default:
+                if (mode == Mode::searching) {
+                    search += c;
+                    break;
+                }
+
                 buffer.insert({cursor.getRow(), cursor.getCol()}, c);
                 cursor.moveRight();
                 break;
@@ -112,7 +191,10 @@ void TextEditor::render() {
 
         for (char c : line) {
             if (cursor.getCol() == col && cursor.getRow() == row) {
-                std::cout << "|";
+                if (mode == Mode::normal) {
+                    std::cout << "|";
+                }
+                
                 std::cout << c;
                 col++;
             }
@@ -121,10 +203,15 @@ void TextEditor::render() {
                 col++;
             }
         }
-        if (cursor.getCol() == line.size() && cursor.getRow() == row) {
+        if (cursor.getCol() == line.size() && cursor.getRow() == row && mode == Mode::normal) {
             std::cout << "|";
         }
         row++;
         std::cout << "\n";
+    }
+
+    if (mode == Mode::searching) {
+        std::cout << "\n" << "Search: " << search << "|";
+        
     }
 }

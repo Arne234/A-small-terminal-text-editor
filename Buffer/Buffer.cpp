@@ -82,3 +82,27 @@ void Buffer::deleteLine(const size_t index) {
 
     lines[index - 1] += deleteLine;
 }
+
+std::optional<Position> Buffer::findLine(const std::string& word, const Position start) const {
+    
+    for (size_t row = start.row; row < lines.size(); ++row) {
+        size_t startCol = (row == start.row) ? start.col + 1 : 0;
+
+        size_t col = lines[row].find(word, startCol);
+
+        if (col != std::string::npos) {
+            return Position{row, col};
+        }
+    }
+    
+    
+    for (size_t row = 0; row < lines.size(); ++row) {
+        size_t col = lines[row].find(word);
+
+        if (col != std::string::npos) {
+            return Position{row, col};
+        }
+    }
+
+    return std::nullopt;
+}
