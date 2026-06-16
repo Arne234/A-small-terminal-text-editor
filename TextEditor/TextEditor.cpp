@@ -45,6 +45,7 @@ void TextEditor::run() {
                 }
                 
                 buffer.insert({cursor.getRow(), cursor.getCol()}, ' ');
+                history.pushUndo({ActionType::insert, Position{cursor.getRow(), cursor.getCol()}, ' '});
                 cursor.moveRight();
                 break;
             case 9:
@@ -60,7 +61,10 @@ void TextEditor::run() {
                 }
 
                 if (cursor.getCol() > 0) {
-                    buffer.deleteChar({cursor.getRow(), cursor.getCol() - 1});
+                    Position pos{cursor.getRow(), cursor.getCol() - 1};
+                    char c = buffer.getChar(pos);
+                    buffer.deleteChar(pos);
+                    history.pushUndo({ActionType::delete_char, pos, c});
                     cursor.moveLeft();
                 }
 
@@ -81,7 +85,7 @@ void TextEditor::run() {
                 break;
             }
 
-            case 'n':
+            case 14:
                 if (mode == Mode::normal && !search.empty()) {
                     Position start = lastMatch.value_or(Position{0, 0});
                     
@@ -94,10 +98,7 @@ void TextEditor::run() {
                         cursor.setCol(pos->col);
                     }
                 }
-                else {
-                    buffer.insert({cursor.getRow(), cursor.getCol()}, 'n');
-                    cursor.moveRight();
-                }
+                
                 break;
 
             case 0:
@@ -161,6 +162,49 @@ void TextEditor::run() {
                 buffer.newLine({cursor.getRow(), cursor.getCol()});
                 cursor.setLineBreak();
                 break;
+
+            case 26: {
+                auto action = history.undo();
+        
+                if (action) {
+                    bool changed = applyReverse(*action);
+
+                    if (changed) {
+                        cursor.setRow(action->pos.row);
+
+                        if (action->a == ActionType::insert) {
+                            cursor.setCol(action->pos.col);
+                        }
+
+                        else {
+                            cursor.setCol(action->pos.col + 1);
+                        }
+                    }
+                }
+
+                break;
+            }
+
+            case 25: {
+                auto action = history.redo();
+
+                if (action) {
+                    bool changed = apply(*action);
+
+                    if (changed) {
+                        if (action->a == ActionType::insert) {
+                            cursor.setCol(action->pos.col + 1);
+                        }
+                        
+                        else {
+                            cursor.setCol(action->pos.col);
+                        }
+                    }
+                }
+
+                break;
+            }
+            
             default:
                 if (mode == Mode::searching) {
                     search += c;
@@ -168,6 +212,7 @@ void TextEditor::run() {
                 }
 
                 buffer.insert({cursor.getRow(), cursor.getCol()}, c);
+                history.pushUndo({ActionType::insert, Position{cursor.getRow(), cursor.getCol()}, static_cast<char>(c)});
                 cursor.moveRight();
                 break;
         }
@@ -214,4 +259,35 @@ void TextEditor::render() {
         std::cout << "\n" << "Search: " << search << "|";
         
     }
+}
+
+
+bool TextEditor::apply(const Action& action) {
+    if (action.a == ActionType::delete_char) {
+        buffer.deleteChar(action.pos);
+        return true;
+    }
+
+    else if (action.a == ActionType::insert) {
+        buffer.insert(action.pos, action.c);
+        return true;
+    }
+
+    return false;
+}
+
+
+
+bool TextEditor::applyReverse(const Action& action) {
+    if (action.a == ActionType::insert) {
+        buffer.deleteChar(action.pos);
+        return true;
+    }
+
+    else if (action.a == ActionType::delete_char) {
+        buffer.insert(action.pos, action.c);
+        return true;
+    }
+
+    return false;
 }

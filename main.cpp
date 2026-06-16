@@ -5,7 +5,8 @@ int main() {
 
     Buffer b;
     Cursor c;
-    TextEditor editor(b, c);
+    History h;
+    TextEditor editor(b, c, h);
 
 
     editor.run();

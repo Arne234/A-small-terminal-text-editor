@@ -1,15 +1,14 @@
 #pragma once
 
+#include "../Position/Position.h"
+
 #include <iostream>
 #include <vector>
 #include <string>
 #include <optional>
 
 
-struct Position {
-    size_t row;
-    size_t col;
-};
+
 
 
 class Buffer {
@@ -25,6 +24,8 @@ class Buffer {
 
         void clearLines();
         void addFileVector(std::vector<std::string> v);
+
+        const char getChar(const Position pos) const;
 
         const size_t getLineLength(const size_t index) const;
         void newLine(Position pos);

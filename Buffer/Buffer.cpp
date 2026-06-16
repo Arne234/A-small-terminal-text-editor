@@ -59,6 +59,11 @@ void Buffer::addFileVector(std::vector<std::string> v) {
 }
 
 
+const char Buffer::getChar(const Position pos) const {
+    return lines[pos.row][pos.col];
+}
+
+
 const size_t Buffer::getLineLength(const size_t index) const {
     return lines[index].length();
 }
@@ -84,6 +89,19 @@ void Buffer::deleteLine(const size_t index) {
 }
 
 std::optional<Position> Buffer::findLine(const std::string& word, const Position start) const {
+    
+    if (start.col == 0 && start.row == 0) {
+        for (size_t row = 0; row < lines.size(); ++row) {
+            size_t col = lines[row].find(word);
+
+            if (col != std::string::npos) {
+                return Position{row, col};
+            }
+        }
+
+        return std::nullopt;
+    }
+    
     
     for (size_t row = start.row; row < lines.size(); ++row) {
         size_t startCol = (row == start.row) ? start.col + 1 : 0;
